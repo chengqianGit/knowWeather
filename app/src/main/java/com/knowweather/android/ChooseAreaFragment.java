@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.knowweather.android.db.City;
 import com.knowweather.android.db.County;
 import com.knowweather.android.db.Province;
+import com.knowweather.android.gson.Weather;
 import com.knowweather.android.util.HttpUtil;
 import com.knowweather.android.util.Utility;
 
@@ -101,12 +102,21 @@ public class ChooseAreaFragment extends Fragment {
                 }else if(currentLevel==LEVEL_CITY){
                     selectedCity = cityList.get(position);
                     queryCounties();
-                }else if(currentLevel==LEVEL_COUNTY){//如果等级为县级，则点击后加载天气活动（UI界面）
+                }else if(currentLevel==LEVEL_COUNTY){
+                    //如果等级为县级，则点击后加载天气活动（UI界面）
+
                     String weatherId = countyList.get(position).getWeatherId();
-                    Intent intent = new Intent(getActivity(),WeatherActivity.class);
-                    intent.putExtra("weather_id",weatherId);
-                    startActivity(intent);
-                    getActivity().finish();
+                    if (getActivity() instanceof MainActivity) {
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weather_id", weatherId);
+                        startActivity(intent);
+                        getActivity().finish();
+                    } else if (getActivity() instanceof WeatherActivity) {
+                        WeatherActivity activity = (WeatherActivity) getActivity();
+                        activity.drawerLayout.closeDrawers();
+                        activity.swipeRefresh.setRefreshing(true);
+                        activity.requestWeather(weatherId);
+                    }
                 }
             }
         });

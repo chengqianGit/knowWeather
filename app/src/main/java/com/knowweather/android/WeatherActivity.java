@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.knowweather.android.gson.Forecast;
 import com.knowweather.android.gson.Weather;
+import com.knowweather.android.service.AutoUpdateService;
 import com.knowweather.android.util.HttpUtil;
 import com.knowweather.android.util.Utility;
 
@@ -33,13 +35,13 @@ import okhttp3.Response;
 public class WeatherActivity extends AppCompatActivity {
 
     //定义各种控件
-    //public DrawerLayout drawerLayout;
+    public DrawerLayout drawerLayout;
 
-    //public SwipeRefreshLayout swipeRefresh;
+    public SwipeRefreshLayout swipeRefresh;
 
     private ScrollView weatherLayout;
 
-    //private Button navButton;
+    private Button navButton;
 
     private TextView titleCity;
 
@@ -91,10 +93,10 @@ public class WeatherActivity extends AppCompatActivity {
         comfortText = (TextView) findViewById(R.id.comfort_text);
         carWashText = (TextView) findViewById(R.id.car_wash_text);
         sportText = (TextView) findViewById(R.id.sport_text);
-        //swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
-        //swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
-        //drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        //navButton = (Button) findViewById(R.id.nav_button);
+        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        navButton = (Button) findViewById(R.id.nav_button);
         /**
          * 尝试从本地缓存中读取天气数据
          */
@@ -111,6 +113,13 @@ public class WeatherActivity extends AppCompatActivity {
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(mWeatherId);
         }
+        //下拉刷新
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(mWeatherId);
+            }
+        });
         //加载必应图片
         String bingPic = prefs.getString("bing_pic",null);
         if(bingPic!=null){
@@ -118,12 +127,19 @@ public class WeatherActivity extends AppCompatActivity {
         }else{
             loadBingPic();
         }
+        //弹出滑动菜单，滑动菜单里面为fragment
+        navButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
 
     }
 
 
 
-    private void requestWeather(final String weatherId) {
+    public void requestWeather(final String weatherId) {
         //将天气id和key拼装出一个接口地址
         String weatherUrl = "http://guolin.tech/api/weather?cityid=" + weatherId + "&key=b6596e1d2fd5404eb77561d592e15825";
         //okhttp方法向服务器发送请求，请求结果回调给匿名Callback对象
@@ -135,7 +151,7 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
-                        //swipeRefresh.setRefreshing(false);
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -160,7 +176,7 @@ public class WeatherActivity extends AppCompatActivity {
                         } else {
                             Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
                         }
-                        //swipeRefresh.setRefreshing(false);
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -203,8 +219,8 @@ public class WeatherActivity extends AppCompatActivity {
         carWashText.setText(carWash);
         sportText.setText(sport);
         weatherLayout.setVisibility(View.VISIBLE);
-        //Intent intent = new Intent(this, AutoUpdateService.class);
-        //startService(intent);
+        Intent intent = new Intent(this, AutoUpdateService.class);
+        startService(intent);
     }
     /**
      * 加载必应每日一图
